@@ -1,0 +1,171 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  
+}
+
+enum Role {
+  STUDENT
+  FACULTY
+  ADMIN
+}
+
+enum EnrollmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String?           // optional — Google OAuth users won't have one
+  googleId  String?  @unique
+  role      Role     @default(STUDENT)
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?         // soft delete marker
+
+  studentEnrollments Enrollment[]      @relation("StudentEnrollments")
+  facultyOfferings   CourseOffering[]  @relation("FacultyOfferings")
+  payments           Payment[]
+  auditLogs          AuditLog[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Department {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  code      String   @unique
+  createdAt DateTime @default(now())
+  deletedAt DateTime?
+
+  courses Course[]
+}
+
+model Course {
+  id           String   @id @default(uuid())
+  title        String
+  code         String   @unique
+  credits      Int
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  createdAt    DateTime @default(now())
+  deletedAt    DateTime?
+
+  offerings CourseOffering[]
+
+  @@index([departmentId])
+}
+
+model Semester {
+  id        String   @id @default(uuid())
+  name      String   // e.g. "Fall 2026"
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  deletedAt DateTime?
+
+  offerings CourseOffering[]
+}
+
+model CourseOffering {
+  id         String   @id @default(uuid())
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id])
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id])
+  facultyId  String
+  faculty    User     @relation("FacultyOfferings", fields: [facultyId], references: [id])
+  capacity   Int      @default(40)
+  deletedAt  DateTime?
+
+  enrollments Enrollment[]
+  exams       Exam[]
+
+  @@unique([courseId, semesterId, facultyId])
+  @@index([semesterId])
+}
+
+model Enrollment {
+  id            String            @id @default(uuid())
+  studentId     String
+  student       User              @relation("StudentEnrollments", fields: [studentId], references: [id])
+  offeringId    String
+  offering      CourseOffering    @relation(fields: [offeringId], references: [id])
+  status        EnrollmentStatus  @default(PENDING)
+  paymentStatus PaymentStatus     @default(PENDING)
+  createdAt     DateTime          @default(now())
+  deletedAt     DateTime?
+
+  results  Result[]
+  payments Payment[]
+
+  @@unique([studentId, offeringId])
+  @@index([studentId])
+  @@index([offeringId])
+}
+
+model Exam {
+  id          String   @id @default(uuid())
+  offeringId  String
+  offering    CourseOffering @relation(fields: [offeringId], references: [id])
+  type        String   // "MIDTERM" | "FINAL"
+  totalMarks  Int
+
+  results Result[]
+}
+
+model Result {
+  id             String     @id @default(uuid())
+  examId         String
+  exam           Exam       @relation(fields: [examId], references: [id])
+  enrollmentId   String
+  enrollment     Enrollment @relation(fields: [enrollmentId], references: [id])
+  marksObtained  Float
+  grade          String?
+
+  @@unique([examId, enrollmentId])
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  studentId      String
+  student        User          @relation(fields: [studentId], references: [id])
+  enrollmentId   String?
+  enrollment     Enrollment?   @relation(fields: [enrollmentId], references: [id])
+  amount         Float
+  stripeSessionId String?      @unique
+  status         PaymentStatus @default(PENDING)
+  createdAt      DateTime      @default(now())
+
+  @@index([studentId])
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String   // e.g. "UPDATE_ROLE", "DELETE_COURSE"
+  entityType String
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
