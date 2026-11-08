@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { Server } from "http";
-import app from "./app.js";       // ⬅️ এটা মিসিং ছিল
+import app from "./app.js";       
 import prisma from "./config/db.js";
 
 const PORT = process.env.PORT || 5000;
