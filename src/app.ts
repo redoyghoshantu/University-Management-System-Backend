@@ -14,6 +14,7 @@ import { PaymentRoutes } from "./modules/payment/payment.routes.js";
 import { PaymentControllers } from "./modules/payment/payment.controller.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 app.use(helmet());
 app.use(cors({
