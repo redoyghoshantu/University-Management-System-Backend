@@ -55,6 +55,21 @@ const paymentSuccess = async (req: Request, res: Response) => {
   }
 };
 
+const paymentCancel = async (req: Request, res: Response) => {
+  const sessionId = req.query.session_id as string;
+  if (!sessionId) return res.status(400).json({ success: false, message: "Missing session_id" });
+  try {
+    const payment = await PaymentServices.handleCancel(sessionId);
+    res.status(200).json({ success: true, message: "Payment was cancelled", data: payment });
+  } catch (error) {
+    if (error instanceof AppError) {
+      res.status(error.statusCode).json({ success: false, message: error.message });
+    } else {
+      res.status(500).json({ success: false, message: "Something went wrong" });
+    }
+  }
+};
+
 export const PaymentControllers = {
-  initiatePayment, webhook, getPaymentById, getMyPayments, paymentSuccess,
+  initiatePayment, webhook, getPaymentById, getMyPayments, paymentSuccess, paymentCancel
 };

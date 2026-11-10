@@ -30,7 +30,7 @@ const initiatePayment = async (studentId: string, enrollmentId: string) => {
       },
     ],
     success_url: `${process.env.CLIENT_SUCCESS_URL}?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: process.env.CLIENT_CANCEL_URL,
+    cancel_url: `${process.env.CLIENT_CANCEL_URL}?session_id={CHECKOUT_SESSION_ID}`,
     metadata: { enrollmentId, studentId },
   });
 
@@ -123,6 +123,15 @@ const verifyAndConfirmPayment = async (sessionId: string) => {
   return { payment, alreadyConfirmed: false, notYetPaid: true };
 };
 
+const handleCancel = async (sessionId: string) => {
+  const payment = await prisma.payment.findUnique({ where: { stripeSessionId: sessionId } });
+  if (!payment) throw new AppError(404, "Payment record not found");
+  if (payment.status === "PENDING") {
+    return prisma.payment.update({ where: { id: payment.id }, data: { status: "FAILED" } });
+  }
+  return payment;
+};
+
 export const PaymentServices = {
-  initiatePayment, handleWebhook, getPaymentById, getMyPayments, verifyAndConfirmPayment,
+  initiatePayment, handleWebhook, getPaymentById, getMyPayments, verifyAndConfirmPayment, handleCancel
 };
