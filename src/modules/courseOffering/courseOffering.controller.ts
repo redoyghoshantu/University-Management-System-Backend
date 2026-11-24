@@ -32,6 +32,11 @@ const getMyOfferings = catchAsync(async (req, res) => {
   sendResponse(res, { statusCode: 200, success: true, message: "Your offerings retrieved successfully", data: result });
 });
 
+const getRoster = catchAsync(async (req, res) => {
+  const result = await CourseOfferingServices.getRoster(req.params.id as string, req.user!);
+  sendResponse(res, { statusCode: 200, success: true, message: "Roster retrieved successfully", data: result });
+});
+
 export const CourseOfferingControllers = {
-  createOffering, getAllOfferings, getSingleOffering, updateOffering, deleteOffering, getMyOfferings,
+  createOffering, getAllOfferings, getSingleOffering, updateOffering, deleteOffering, getMyOfferings, getRoster,
 };

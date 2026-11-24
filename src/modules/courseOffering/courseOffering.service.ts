@@ -90,6 +90,29 @@ const getMyOfferings = async (facultyId: string) => {
   });
 };
 
+// Faculty roster: confirmed students of one offering (with their results). Faculty can only see their own offerings.
+const getRoster = async (offeringId: string, user: { id: string; role: string }) => {
+  const offering = await prisma.courseOffering.findFirst({
+    where: { id: offeringId, deletedAt: null },
+    include: { course: true, semester: true, exams: true },
+  });
+  if (!offering) throw new AppError(404, "Course offering not found");
+  if (user.role === "FACULTY" && offering.facultyId !== user.id) {
+    throw new AppError(403, "You can only view your own course offerings");
+  }
+
+  const enrollments = await prisma.enrollment.findMany({
+    where: { offeringId, deletedAt: null, status: "CONFIRMED" },
+    include: {
+      student: { select: { id: true, name: true, email: true } },
+      results: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return { offering, enrollments };
+};
+
 export const CourseOfferingServices = {
-  createOffering, getAllOfferings, getSingleOffering, updateOffering, deleteOffering, getMyOfferings,
+  createOffering, getAllOfferings, getSingleOffering, updateOffering, deleteOffering, getMyOfferings, getRoster,
 };

@@ -7,6 +7,7 @@ const router = Router();
 router.post("/", auth("ADMIN"), CourseOfferingControllers.createOffering);
 router.get("/", CourseOfferingControllers.getAllOfferings);
 router.get("/my-offerings", auth("FACULTY"), CourseOfferingControllers.getMyOfferings); // ⚠️ এই route অবশ্যই /:id এর আগে বসাতে হবে
+router.get("/:id/roster", auth("FACULTY", "ADMIN"), CourseOfferingControllers.getRoster);
 router.get("/:id", CourseOfferingControllers.getSingleOffering);
 router.patch("/:id", auth("ADMIN"), CourseOfferingControllers.updateOffering);
 router.delete("/:id", auth("ADMIN"), CourseOfferingControllers.deleteOffering);
