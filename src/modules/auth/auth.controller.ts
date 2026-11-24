@@ -33,6 +33,16 @@ const refreshToken = catchAsync(async (req, res) => {
   });
 });
 
+const getMe = catchAsync(async (req, res) => {
+  const result = await AuthServices.getMe(req.user!.id);
+  sendResponse(res, { statusCode: 200, success: true, message: "Profile retrieved successfully", data: result });
+});
+
+const updateMe = catchAsync(async (req, res) => {
+  const result = await AuthServices.updateMe(req.user!.id, req.body);
+  sendResponse(res, { statusCode: 200, success: true, message: "Profile updated successfully", data: result });
+});
+
 const googleRedirect = catchAsync(async (req, res) => {
   res.redirect(AuthServices.getGoogleAuthUrl());
 });
@@ -57,6 +67,8 @@ export const AuthControllers = {
   register,
   login,
   refreshToken,
+  getMe,
+  updateMe,
   googleRedirect,
   googleCallback,
 };

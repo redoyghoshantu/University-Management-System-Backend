@@ -8,7 +8,6 @@ const registerUser = async (payload: {
   name: string;
   email: string;
   password: string;
-  role?: "STUDENT" | "FACULTY" | "ADMIN";
 }) => {
   const existingUser = await prisma.user.findUnique({
     where: { email: payload.email },
@@ -25,7 +24,7 @@ const registerUser = async (payload: {
       name: payload.name,
       email: payload.email,
       password: hashedPassword,
-      role: payload.role ?? "STUDENT",
+      role: "STUDENT", // public registration is always STUDENT; admins promote users via /admin/users/:id/role
     },
   });
 
@@ -55,7 +54,11 @@ const loginUser = async (payload: { email: string; password: string }) => {
   const accessToken = generateAccessToken(jwtPayload);
   const refreshToken = generateRefreshToken(jwtPayload);
 
-  return { accessToken, refreshToken };
+  return {
+    accessToken,
+    refreshToken,
+    user: { id: user.id, name: user.name, email: user.email, role: user.role },
+  };
 };
 
 const refreshAccessToken = async (refreshToken: string) => {
@@ -76,6 +79,26 @@ const refreshAccessToken = async (refreshToken: string) => {
   return { accessToken: newAccessToken };
 };
 
+
+const getMe = async (userId: string) => {
+  const user = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+    select: { id: true, name: true, email: true, role: true, isVerified: true, createdAt: true },
+  });
+  if (!user) throw new AppError(404, "User not found");
+  return user;
+};
+
+const updateMe = async (userId: string, payload: { name?: string }) => {
+  if (payload.name !== undefined && payload.name.trim().length < 2) {
+    throw new AppError(400, "Name must be at least 2 characters");
+  }
+  return prisma.user.update({
+    where: { id: userId },
+    data: { name: payload.name?.trim() },
+    select: { id: true, name: true, email: true, role: true, isVerified: true, createdAt: true },
+  });
+};
 
 const getGoogleAuthUrl = () => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
@@ -194,6 +217,8 @@ export const AuthServices = {
   registerUser,
   loginUser,
   refreshAccessToken,
+  getMe,
+  updateMe,
   getGoogleAuthUrl,
   googleLogin,
 };
