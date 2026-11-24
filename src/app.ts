@@ -13,6 +13,7 @@ import { EnrollmentRoutes } from "./modules/enrollment/enrollment.routes.js";
 import { PaymentRoutes } from "./modules/payment/payment.routes.js";
 import { PaymentControllers } from "./modules/payment/payment.controller.js";
 import { AdminRoutes } from "./modules/admin/admin.routes.js";
+import { ExamRoutes, ResultRoutes } from "./modules/result/result.routes.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -44,7 +45,9 @@ app.use("/api/v1/semesters", SemesterRoutes);
 app.use("/api/v1/course-offerings", CourseOfferingRoutes);
 app.use("/api/v1/enrollments", EnrollmentRoutes);
 app.use("/api/v1/payments", PaymentRoutes);
-app.use("/api/v1/admin", AdminRoutes); 
+app.use("/api/v1/admin", AdminRoutes);
+app.use("/api/v1/exams", ExamRoutes);
+app.use("/api/v1/results", ResultRoutes);
 
 app.use((req, res, next) => {
   next(new AppError(404, "Route not found"));
